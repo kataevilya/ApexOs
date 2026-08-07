@@ -73,7 +73,7 @@ DEPS        := $(OBJECTS:.o=.d)
 
 KERNEL_ELF := $(BUILD_DIR)/kernel.elf
 USER_ELF   := $(BUILD_DIR)/user/hello.elf
-ISO_IMAGE  := nikios.iso
+ISO_IMAGE  := apexos.iso
 
 .PHONY: all clean iso run run-serial run-ata run-sata debug test check-multiboot user-app asc asc-app
 
