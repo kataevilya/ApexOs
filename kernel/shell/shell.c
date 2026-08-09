@@ -933,7 +933,7 @@ static void lspci_callback(const struct pci_device *dev, void *ctx) {
    кучи. ЧЕСТНО: сейчас это только инфраструктура загрузки -- ничто
    ещё не потребляет загруженный бинарник (нет драйверов, которые
    умели бы что-то с ним сделать). */
-#define BINARY_LOAD_VIRT_BASE 0xFFFFFFFFF0000000ull
+#define BINARY_LOAD_VIRT_BASE 0xFFFFFFFFFC000000ull
 static uint64_t g_binary_load_next = BINARY_LOAD_VIRT_BASE;
 
 static void cmd_loadbin(int argc, char **argv) {

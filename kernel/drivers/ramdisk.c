@@ -6,7 +6,7 @@
 #include "string.h"
 
 /* Отдельный virtual-диапазон, не пересекается с kheap/framebuffer/backbuffer. */
-#define RAMDISK_VIRT_BASE   0xFFFFFFFFD0000000ull
+#define RAMDISK_VIRT_BASE   0xFFFFFFFFF8000000ull
 #define RAMDISK_SIZE_BYTES  (8ull * 1024 * 1024) /* 8 MiB — см. честную оговорку в fat32.c
                                                       про порог в 65525 кластеров */
 #define RAMDISK_SECTORS     (RAMDISK_SIZE_BYTES / SECTOR_SIZE)

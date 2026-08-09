@@ -6,8 +6,8 @@
 #include <stddef.h>
 
 /* Отдельные virtual-диапазоны для реального framebuffer'а и backbuffer'а —
-   не пересекаются ни с kheap (0xFFFFFFFFA0...), ни с чем-либо ещё. */
-#define FB_VIRT_BASE       0xFFFFFFFFB0000000ull
+   не пересекаются ни с kheap (0xFFFFFFFFD0...), ни с чем-либо ещё. */
+#define FB_VIRT_BASE       0xFFFFFFFFE0000000ull
 #define BACKBUF_VIRT_BASE  0xFFFFFFFFC0000000ull
 
 /* Разумный верхний предел размера кадра — отсекает откровенно битые

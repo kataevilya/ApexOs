@@ -226,7 +226,7 @@ static void module_write_cb(const struct multiboot_tag_module *tag, void *ctx_) 
         uint64_t pages = (total_bytes + VMM_PAGE_SIZE - 1) / VMM_PAGE_SIZE;
         /* Отдельный диапазон на модуль, чтобы несколько модулей не
            перекрывались друг с другом при временном маппинге. */
-        uint64_t temp_virt_base = 0xFFFFFFFFE0000000ull + (uint64_t)this_index * 0x10000000ull;
+        uint64_t temp_virt_base = 0xFFFFFFFFF0000000ull + (uint64_t)this_index * 0x10000000ull;
         for (uint64_t i = 0; i < pages; i++) {
             vmm_map(temp_virt_base + i * VMM_PAGE_SIZE, page_start + i * VMM_PAGE_SIZE,
                     VMM_PRESENT | VMM_WRITABLE);
@@ -401,10 +401,11 @@ void kernel_main(uint32_t magic, uint32_t mb_info_phys) {
 
     /* Self-test 2: полный цикл map -> запись -> чтение -> проверка
        трансляции -> unmap -> проверка, что трансляция снова 0.
-       Виртуальный адрес заведомо вне уже замапленных 64 MiB, поэтому
+       Виртуальный адрес заведомо вне статического 1 GiB huge-page
+       мапа (0xFFFFFFFF80000000..0xFFFFFFFFBFFFFFFF), поэтому
        vmm_map() реально создаёт новые PDPT/PD/PT записи, а не
        переиспользует существующие. */
-    uint64_t test_virt = 0xFFFFFFFF90000000ull;
+    uint64_t test_virt = 0xFFFFFFFFC0000000ull;
     uint64_t test_frame = pmm_alloc_frame();
     if (test_frame == 0) {
         panic("vmm self-test: pmm_alloc_frame failed for test page");

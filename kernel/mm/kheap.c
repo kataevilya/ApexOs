@@ -5,10 +5,10 @@
 #include "serial.h"
 
 /* Виртуальный диапазон кучи — заведомо не пересекается ни с образом
-   ядра (KERNEL_VMA..+64 MiB), ни с адресами, которые уже трогали
-   self-тесты VMM (0xFFFFFFFF90000000, освобождён обратно unmap'ом,
+   ядра (KERNEL_VMA..+1 GiB), ни с адресами, которые уже трогали
+   self-тесты VMM (0xFFFFFFFFC0000000, освобождён обратно unmap'ом,
    но выбираем другой диапазон всё равно, чтобы не полагаться на это). */
-#define HEAP_VIRT_START 0xFFFFFFFFA0000000ull
+#define HEAP_VIRT_START 0xFFFFFFFFD0000000ull
 #define HEAP_MAX_BYTES  (16ull * 1024 * 1024) /* 16 MiB — явный предел, не "растёт вечно" */
 
 #define BLOCK_MAGIC 0xB10CB10Cu
