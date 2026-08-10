@@ -1,4 +1,6 @@
 #include "shell.h"
+#include "net.h"
+#include "apxp.h"
 #include "fat32.h"
 #include "console.h"
 #include "serial.h"
@@ -1159,6 +1161,49 @@ static void cmd_halt(int argc, char **argv) {
     halt_forever();
 }
 
+static void cmd_exit(int argc, char **argv) {
+    (void)argc; (void)argv;
+    shell_write("exit: halting system...\n");
+    halt_forever();
+}
+
+static void cmd_dlw(int argc, char **argv) {
+    if (argc < 2) {
+        shell_write("dlw: usage: dlw <url>\n");
+        return;
+    }
+    if (!g_net.have_ip) {
+        shell_write("dlw: no network -- DHCP not configured\n");
+        return;
+    }
+    pkgmgr_download(argv[1]);
+}
+
+static void cmd_apxprun(int argc, char **argv) {
+    if (argc < 2) {
+        shell_write("apxprun: usage: apxprun <package.apxp>\n");
+        return;
+    }
+    apxp_run(argv[1]);
+}
+
+static void pkglist_callback(const struct fat32_dirent *e, void *ctx) {
+    (void)ctx;
+    char name[13];
+    fat32_83_to_display(e->name, name);
+    if (e->attr & FAT32_ATTR_DIRECTORY) return;
+    size_t len = strlen(name);
+    if (len > 5 && strcmp(name + len - 5, ".APXP") == 0) {
+        shell_printf("  %s (%u bytes)\n", name, (unsigned)e->file_size);
+    }
+}
+
+static void cmd_pkglist(int argc, char **argv) {
+    (void)argc; (void)argv;
+    shell_write("Installed packages (APXP):\n");
+    fat32_list_dir(fat32_root_cluster(), pkglist_callback, NULL);
+}
+
 static void cmd_run(int argc, char **argv) {
     if (argc < 2) { shell_write("run: missing ELF64 file name\n"); return; }
     char name83[FAT32_NAME_LEN];
@@ -1242,6 +1287,10 @@ static const struct shell_command COMMANDS[] = {
     { "run",     cmd_run },
     { "reboot",  cmd_reboot },
     { "halt",    cmd_halt },
+    { "exit",    cmd_exit },
+    { "dlw",     cmd_dlw },
+    { "apxprun", cmd_apxprun },
+    { "pkglist", cmd_pkglist },
 };
 #define NUM_COMMANDS (sizeof(COMMANDS) / sizeof(COMMANDS[0]))
 

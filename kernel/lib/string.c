@@ -103,3 +103,30 @@ int strcpy_safe(char *dest, size_t dest_size, const char *src) {
     dest[i] = '\0';
     return (src[i] == '\0') ? 0 : -1;
 }
+
+char *strstr(const char *haystack, const char *needle) {
+    if (*needle == '\0') return (char *)haystack;
+    for (; *haystack != '\0'; haystack++) {
+        const char *h = haystack;
+        const char *n = needle;
+        while (*h != '\0' && *n != '\0' && *h == *n) { h++; n++; }
+        if (*n == '\0') return (char *)haystack;
+    }
+    return NULL;
+}
+
+char *strchr(const char *s, int c) {
+    for (; *s != '\0'; s++) {
+        if ((unsigned char)*s == (unsigned char)c) return (char *)s;
+    }
+    return (c == '\0') ? (char *)s : NULL;
+}
+
+char *strrchr(const char *s, int c) {
+    const char *last = NULL;
+    for (; *s != '\0'; s++) {
+        if ((unsigned char)*s == (unsigned char)c) last = s;
+    }
+    if (c == '\0') return (char *)s;
+    return (char *)last;
+}

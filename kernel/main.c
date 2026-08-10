@@ -19,6 +19,8 @@
 #include "usermode.h"
 #include "ramdisk.h"
 #include "fat32.h"
+#include "net.h"
+#include "apxp.h"
 #include "shell.h"
 #include "highlight.h"
 #include "mm_layout.h"
@@ -512,8 +514,11 @@ void kernel_main(uint32_t magic, uint32_t mb_info_phys) {
      */
     struct blockdev *ramdisk = ramdisk_init();
     if (fat32_format(ramdisk) != 0) {
-        panic("fat32_format failed on a freshly-initialized ramdisk — internal bug");
+        panic("fat32_format failed on a freshly-initialized ramdisk -- internal bug");
     }
+
+    net_init();
+    apxp_init();
 
     /* Записываем README и (если есть) тестовую ELF64-программу из
        Multiboot2-модуля прямо в FAT32 — это заодно честная проверка

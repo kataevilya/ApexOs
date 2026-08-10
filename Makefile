@@ -49,11 +49,24 @@ C_SOURCES := \
     kernel/drivers/font8x16_data.c \
     kernel/drivers/ramdisk.c \
     kernel/drivers/rtc.c \
+    kernel/drivers/net/rtl8139.c \
     kernel/drivers/pci.c \
     kernel/fs/fat32.c \
+    kernel/net/net.c \
+    kernel/net/eth.c \
+    kernel/net/arp.c \
+    kernel/net/ip.c \
+    kernel/net/icmp.c \
+    kernel/net/udp.c \
+    kernel/net/tcp.c \
+    kernel/net/dhcp.c \
+    kernel/net/dns.c \
+    kernel/net/http.c \
     kernel/shell/shell.c \
     kernel/shell/highlight.c \
     kernel/shell/editor.c \
+    kernel/apxp/apxp.c \
+    kernel/apxp/pkgmgr.c \
     kernel/process.c \
     kernel/task.c
 
