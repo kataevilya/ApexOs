@@ -29,11 +29,16 @@ int pkgmgr_download(const char *url) {
         path[path_len] = '\0';
         has_host = 1;
     } else if (slash == NULL && *p != '\0') {
-        size_t host_len = strlen(p);
-        if (host_len >= sizeof(host)) host_len = sizeof(host) - 1;
-        memcpy(host, p, host_len);
-        strcpy(path, "/");
-        has_host = 1;
+        const char *dot = strchr(p, '.');
+        if (dot && strcmp(dot, ".apxp") == 0) {
+            has_host = 0;
+        } else {
+            size_t host_len = strlen(p);
+            if (host_len >= sizeof(host)) host_len = sizeof(host) - 1;
+            memcpy(host, p, host_len);
+            strcpy(path, "/");
+            has_host = 1;
+        }
     }
 
     if (!has_host) {
