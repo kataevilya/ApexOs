@@ -6,6 +6,9 @@
 #include "string.h"
 #include "kheap.h"
 
+#define DEFAULT_PKG_HOST "raw.githubusercontent.com"
+#define DEFAULT_PKG_PATH "/kataevilya/apexosprograms/main/"
+
 int pkgmgr_download(const char *url) {
     char host[64] = {0};
     char path[192] = {0};
@@ -14,8 +17,9 @@ int pkgmgr_download(const char *url) {
     if (strncmp(p, "https://", 8) == 0) p += 8;
     else if (strncmp(p, "http://", 7) == 0) p += 7;
 
+    int has_host = 0;
     const char *slash = strchr(p, '/');
-    if (slash) {
+    if (slash && slash != p) {
         size_t host_len = (size_t)(slash - p);
         if (host_len >= sizeof(host)) host_len = sizeof(host) - 1;
         memcpy(host, p, host_len);
@@ -23,11 +27,31 @@ int pkgmgr_download(const char *url) {
         if (path_len >= sizeof(path)) path_len = sizeof(path) - 1;
         memcpy(path, slash, path_len);
         path[path_len] = '\0';
-    } else {
+        has_host = 1;
+    } else if (slash == NULL && *p != '\0') {
         size_t host_len = strlen(p);
         if (host_len >= sizeof(host)) host_len = sizeof(host) - 1;
         memcpy(host, p, host_len);
         strcpy(path, "/");
+        has_host = 1;
+    }
+
+    if (!has_host) {
+        strcpy(host, DEFAULT_PKG_HOST);
+        strcpy(path, DEFAULT_PKG_PATH);
+        size_t url_len = strlen(url);
+        if (url_len > 0 && url[0] == '/') {
+            size_t path_len = strlen(url);
+            if (path_len >= sizeof(path)) path_len = sizeof(path) - 1;
+            memcpy(path, url, path_len);
+            path[path_len] = '\0';
+        } else if (url_len > 0) {
+            size_t path_len = strlen(DEFAULT_PKG_PATH) + url_len;
+            if (path_len >= sizeof(path)) path_len = sizeof(path) - 1;
+            memcpy(path, DEFAULT_PKG_PATH, strlen(DEFAULT_PKG_PATH));
+            memcpy(path + strlen(DEFAULT_PKG_PATH), url, url_len);
+            path[path_len] = '\0';
+        }
     }
 
     if (host[0] == '\0') {
