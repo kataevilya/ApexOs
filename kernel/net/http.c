@@ -1,8 +1,9 @@
 #include "net.h"
 #include "rtl8139.h"
 #include "serial.h"
-#include "string.h"
+#include "console.h"
 #include "pit.h"
+#include "string.h"
 #include <stdint.h>
 
 size_t string_concat(char *dst, size_t dst_size, const char *a, const char *b, const char *c) {
@@ -32,6 +33,7 @@ size_t string_concat(char *dst, size_t dst_size, const char *a, const char *b, c
 int net_http_get(const char *host, const char *path, char *buf, size_t max_len, uint32_t *out_len) {
     uint32_t server_ip = 0;
     if (net_dns_resolve(host, &server_ip) != 0) {
+        console_printf("[http] dns failed for %s\n", host);
         serial_printf("[http] dns failed for %s\n", host);
         return -1;
     }
@@ -44,6 +46,7 @@ int net_http_get(const char *host, const char *path, char *buf, size_t max_len, 
     reqlen += string_concat(req, sizeof(req) - reqlen, "Connection: close\r\n\r\n", NULL, NULL);
 
     if (net_tcp_connect(server_ip, 80) != 0) {
+        console_printf("[http] tcp connect to %s failed\n", host);
         serial_printf("[http] tcp connect to %s failed\n", host);
         return -1;
     }

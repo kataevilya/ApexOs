@@ -1,9 +1,10 @@
 #include "net.h"
 #include "rtl8139.h"
 #include "serial.h"
+#include "console.h"
 #include "string.h"
-
 void ip_send(uint8_t proto, uint32_t dst, const void *payload, uint16_t plen);
+
 #define TCP_RX_BUF_SIZE 4096
 
 static uint8_t tcp_rx_buf[TCP_RX_BUF_SIZE];
@@ -61,6 +62,12 @@ int net_tcp_connect(uint32_t ip, uint16_t port) {
 
     for (volatile int i = 0; i < 500000; i++) __asm__ volatile ("nop");
     if (!tcp_connected) {
+        console_printf("[tcp] connect timeout to %u.%u.%u.%u:%u\n",
+                       (ip >> 24) & 0xFF, (ip >> 16) & 0xFF,
+                       (ip >> 8) & 0xFF, ip & 0xFF, port);
+        serial_printf("[tcp] connect timeout to %u.%u.%u.%u:%u\n",
+                      (ip >> 24) & 0xFF, (ip >> 16) & 0xFF,
+                      (ip >> 8) & 0xFF, ip & 0xFF, port);
         return -1;
     }
     return 0;
@@ -156,6 +163,7 @@ void tcp_handle(const void *buf, size_t len) {
         tcp_ack = seq + 1;
         tcp_seq += 1;
         tcp_connected = 1;
+        console_write("[tcp] connection established\n");
         serial_write("[tcp] connection established\n");
         uint8_t pkt[64];
         memset(pkt, 0, sizeof(pkt));

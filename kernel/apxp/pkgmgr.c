@@ -9,6 +9,24 @@
 #define DEFAULT_PKG_HOST "raw.githubusercontent.com"
 #define DEFAULT_PKG_PATH "/kataevilya/apexosprograms/main/"
 
+static void pkgmgr_err(const char *msg) {
+    console_write("[pkgmgr] ");
+    console_write(msg);
+    console_write("\n");
+    serial_write("[pkgmgr] ");
+    serial_write(msg);
+    serial_write("\n");
+}
+
+static void pkgmgr_info(const char *msg) {
+    console_write("[pkgmgr] ");
+    console_write(msg);
+    console_write("\n");
+    serial_write("[pkgmgr] ");
+    serial_write(msg);
+    serial_write("\n");
+}
+
 int pkgmgr_download(const char *url) {
     char host[64] = {0};
     char path[192] = {0};
@@ -60,14 +78,19 @@ int pkgmgr_download(const char *url) {
     }
 
     if (host[0] == '\0') {
-        serial_write("[pkgmgr] invalid url: no host\n");
+        pkgmgr_err("invalid url: no host");
         return -1;
     }
+
+    pkgmgr_info("downloading...");
+    console_printf("  host: %s\n  path: %s\n", host, path);
+    serial_printf("  host: %s\n  path: %s\n", host, path);
 
     char dlbuf[64 * 1024];
     uint32_t out_len = 0;
     if (net_http_get(host, path, dlbuf, sizeof(dlbuf) - 1, &out_len) != 0) {
-        serial_printf("[pkgmgr] download failed for %s\n", url);
+        console_printf("[pkgmgr] download failed: %s\n", url);
+        serial_printf("[pkgmgr] download failed: %s\n", url);
         return -1;
     }
 
@@ -77,15 +100,16 @@ int pkgmgr_download(const char *url) {
 
     char name83[FAT32_NAME_LEN];
     if (fat32_name_to_83(fname, name83) != 0) {
-        serial_printf("[pkgmgr] invalid filename: %s\n", fname);
+        pkgmgr_err("invalid filename in URL");
         return -1;
     }
 
     if (fat32_write_file(fat32_root_cluster(), name83, dlbuf, out_len) != 0) {
-        serial_printf("[pkgmgr] failed to save %s (no space?)\n", fname);
+        pkgmgr_err("failed to save package (no space?)");
         return -1;
     }
 
+    console_printf("[pkgmgr] installed %s (%u bytes)\n", fname, (unsigned)out_len);
     serial_printf("[pkgmgr] installed %s (%u bytes)\n", fname, (unsigned)out_len);
     return 0;
 }

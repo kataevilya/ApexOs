@@ -1,5 +1,6 @@
 #include "net.h"
 #include "serial.h"
+#include "console.h"
 #include "string.h"
 
 void arp_handle(const void *buf, size_t len) {
@@ -16,7 +17,10 @@ void arp_handle(const void *buf, size_t len) {
                    ((uint32_t)arp->tpa[2] << 8) | arp->tpa[3];
 
     if (oper == ARP_OP_REQUEST && tpa == g_net.ip_addr) {
-        serial_printf("[arp] reply to %d.%d.%d.%d\n",
+        console_printf("[arp] reply to %u.%u.%u.%u\n",
+                       (spa >> 24) & 0xFF, (spa >> 16) & 0xFF,
+                       (spa >> 8) & 0xFF, spa & 0xFF);
+        serial_printf("[arp] reply to %u.%u.%u.%u\n",
                       (spa >> 24) & 0xFF, (spa >> 16) & 0xFF,
                       (spa >> 8) & 0xFF, spa & 0xFF);
         uint8_t reply[sizeof(struct arp_hdr)];

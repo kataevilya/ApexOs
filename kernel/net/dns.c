@@ -1,6 +1,7 @@
 #include "net.h"
 #include "rtl8139.h"
 #include "serial.h"
+#include "console.h"
 #include "string.h"
 #include <stdint.h>
 
@@ -21,6 +22,8 @@ static void dns_handle(uint16_t sport, const void *buf, size_t len) {
 
     uint16_t ancount = ((uint16_t)p[6] << 8) | p[7];
     if (ancount < 1) {
+        console_write("[dns] no answer\n");
+        serial_write("[dns] no answer\n");
         g_dns_cb(0);
         return;
     }
@@ -33,6 +36,8 @@ static void dns_handle(uint16_t sport, const void *buf, size_t len) {
     }
     answer += 5;
     if (answer + 10 > (const uint8_t *)buf + len) {
+        console_write("[dns] bad answer\n");
+        serial_write("[dns] bad answer\n");
         g_dns_cb(0);
         return;
     }
@@ -40,16 +45,25 @@ static void dns_handle(uint16_t sport, const void *buf, size_t len) {
     uint16_t rdlen = ((uint16_t)answer[0] << 8) | answer[1];
     answer += 2;
     if (rdlen != 4) {
+        console_write("[dns] bad rdlen\n");
+        serial_write("[dns] bad rdlen\n");
         g_dns_cb(0);
         return;
     }
     uint32_t ip = ((uint32_t)answer[0] << 24) | ((uint32_t)answer[1] << 16) |
                   ((uint32_t)answer[2] << 8) | answer[3];
+    console_printf("[dns] resolved to %u.%u.%u.%u\n",
+                   (ip >> 24) & 0xFF, (ip >> 16) & 0xFF,
+                   (ip >> 8) & 0xFF, ip & 0xFF);
+    serial_printf("[dns] resolved to %u.%u.%u.%u\n",
+                  (ip >> 24) & 0xFF, (ip >> 16) & 0xFF,
+                  (ip >> 8) & 0xFF, ip & 0xFF);
     g_dns_cb(ip);
 }
 
 int net_dns_resolve(const char *hostname, uint32_t *out_ip) {
     (void)out_ip;
+    console_printf("[dns] resolving %s\n", hostname);
     serial_printf("[dns] resolving %s\n", hostname);
     g_dns_tid = (uint16_t)((uintptr_t)hostname & 0xFFFF);
     if (g_dns_tid == 0) g_dns_tid = 0x1234;

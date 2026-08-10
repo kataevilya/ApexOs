@@ -1,13 +1,12 @@
 #include "net.h"
 #include "rtl8139.h"
 #include "serial.h"
+#include "console.h"
 #include "string.h"
 #include <stdint.h>
-
 void arp_handle(const void *buf, size_t len);
 void ip_handle(const void *buf, size_t len);
-void icmp_handle(const void *buf, size_t len);
-void tcp_handle(const void *buf, size_t len);
+
 net_state_t g_net;
 dhcp_callback_t g_dhcp_cb = NULL;
 
@@ -17,6 +16,11 @@ static void dhcp_cb(uint32_t offered_ip, uint32_t server_ip) {
     g_net.gateway = server_ip;
     g_net.dns_server = server_ip;
     g_net.have_ip = 1;
+    console_printf("[net] DHCP offered: %d.%d.%d.%d, gateway=%d.%d.%d.%d\n",
+                   (offered_ip >> 24) & 0xFF, (offered_ip >> 16) & 0xFF,
+                   (offered_ip >> 8) & 0xFF, offered_ip & 0xFF,
+                   (server_ip >> 24) & 0xFF, (server_ip >> 16) & 0xFF,
+                   (server_ip >> 8) & 0xFF, server_ip & 0xFF);
     serial_printf("[net] DHCP offered: %d.%d.%d.%d, gateway=%d.%d.%d.%d\n",
                   (offered_ip >> 24) & 0xFF, (offered_ip >> 16) & 0xFF,
                   (offered_ip >> 8) & 0xFF, offered_ip & 0xFF,
@@ -28,6 +32,9 @@ void net_init(void) {
     memset(&g_net, 0, sizeof(g_net));
     rtl8139_init();
     rtl8139_get_mac(g_net.mac);
+    console_printf("[net] initialized, MAC=%02X:%02X:%02X:%02X:%02X:%02X\n",
+                   g_net.mac[0], g_net.mac[1], g_net.mac[2],
+                   g_net.mac[3], g_net.mac[4], g_net.mac[5]);
     serial_printf("[net] initialized, MAC=%02X:%02X:%02X:%02X:%02X:%02X\n",
                   g_net.mac[0], g_net.mac[1], g_net.mac[2],
                   g_net.mac[3], g_net.mac[4], g_net.mac[5]);
@@ -42,6 +49,7 @@ void net_init(void) {
     }
 
     if (!g_net.have_ip) {
+        console_write("[net] DHCP timeout, using fallback 10.0.2.15/24\n");
         serial_write("[net] DHCP timeout, using fallback 10.0.2.15/24\n");
         g_net.ip_addr = 0x0A00020F;
         g_net.netmask = 0xFFFFFF00;

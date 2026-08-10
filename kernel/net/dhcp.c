@@ -1,6 +1,7 @@
 #include "net.h"
 #include "rtl8139.h"
 #include "serial.h"
+#include "console.h"
 #include "string.h"
 #include <stdint.h>
 
@@ -22,10 +23,24 @@ static void dhcp_handle(uint16_t sport, const void *buf, size_t len) {
     uint32_t server_ip = ((uint32_t)p[20] << 24) | ((uint32_t)p[21] << 16) |
                          ((uint32_t)p[22] << 8) | p[23];
 
+    console_printf("[dhcp] offer: %u.%u.%u.%u from %u.%u.%u.%u\n",
+                   (offered_ip >> 24) & 0xFF, (offered_ip >> 16) & 0xFF,
+                   (offered_ip >> 8) & 0xFF, offered_ip & 0xFF,
+                   (server_ip >> 24) & 0xFF, (server_ip >> 16) & 0xFF,
+                   (server_ip >> 8) & 0xFF, server_ip & 0xFF);
+    serial_printf("[dhcp] offer: %u.%u.%u.%u from %u.%u.%u.%u\n",
+                  (offered_ip >> 24) & 0xFF, (offered_ip >> 16) & 0xFF,
+                  (offered_ip >> 8) & 0xFF, offered_ip & 0xFF,
+                  (server_ip >> 24) & 0xFF, (server_ip >> 16) & 0xFF,
+                  (server_ip >> 8) & 0xFF, server_ip & 0xFF);
+
     g_dhcp_cb(offered_ip, server_ip);
 }
 
 void dhcp_discover(void) {
+    console_write("[dhcp] sending discover...\n");
+    serial_write("[dhcp] sending discover...\n");
+
     uint8_t pkt[300];
     memset(pkt, 0, sizeof(pkt));
     pkt[0] = 0x01;
