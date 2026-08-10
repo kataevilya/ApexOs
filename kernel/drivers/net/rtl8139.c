@@ -1,11 +1,13 @@
 #include "rtl8139.h"
 #include "io.h"
+#include "net.h"
 #include "pmm.h"
 #include "vmm.h"
 #include "serial.h"
 #include "pic.h"
 #include "pci.h"
 #include "string.h"
+#include "idt.h"
 #include <stddef.h>
 
 #define RTL_RXBUF_VIRT 0xFFFFFFFFF0000000ull
@@ -16,6 +18,15 @@ static uint8_t  mac[6];
 
 void rtl8139_get_mac(uint8_t m[6]) {
     for (int i = 0; i < 6; i++) m[i] = mac[i];
+}
+
+static void rtl8139_irq_handler(struct registers *regs) {
+    (void)regs;
+    uint8_t buf[2048];
+    size_t len;
+    while (rtl8139_poll(buf, sizeof(buf), &len)) {
+        net_rx_handler(buf, len);
+    }
 }
 
 void rtl8139_init(void) {
@@ -66,6 +77,9 @@ void rtl8139_init(void) {
     outw(io_base + RTL8139_IMR, 0x0005);
 
     outb(io_base + RTL8139_CMD, RTL_CMD_RX_ENA | RTL_CMD_TX_ENA);
+
+    register_interrupt_handler(51, rtl8139_irq_handler);
+    pic_unmask_irq(11);
 
     serial_write("[rtl8139] initialized OK\n");
 }
