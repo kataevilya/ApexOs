@@ -86,11 +86,16 @@ int pkgmgr_download(const char *url) {
     console_printf("  host: %s\n  path: %s\n", host, path);
     serial_printf("  host: %s\n  path: %s\n", host, path);
 
-    char dlbuf[64 * 1024];
+    char *dlbuf = (char *)kmalloc(64 * 1024);
+    if (dlbuf == NULL) {
+        pkgmgr_err("out of memory");
+        return -1;
+    }
     uint32_t out_len = 0;
-    if (net_http_get(host, path, dlbuf, sizeof(dlbuf) - 1, &out_len) != 0) {
+    if (net_http_get(host, path, dlbuf, 64 * 1024 - 1, &out_len) != 0) {
         console_printf("[pkgmgr] download failed: %s\n", url);
         serial_printf("[pkgmgr] download failed: %s\n", url);
+        kfree(dlbuf);
         return -1;
     }
 
@@ -101,15 +106,18 @@ int pkgmgr_download(const char *url) {
     char name83[FAT32_NAME_LEN];
     if (fat32_name_to_83(fname, name83) != 0) {
         pkgmgr_err("invalid filename in URL");
+        kfree(dlbuf);
         return -1;
     }
 
     if (fat32_write_file(fat32_root_cluster(), name83, dlbuf, out_len) != 0) {
         pkgmgr_err("failed to save package (no space?)");
+        kfree(dlbuf);
         return -1;
     }
 
     console_printf("[pkgmgr] installed %s (%u bytes)\n", fname, (unsigned)out_len);
     serial_printf("[pkgmgr] installed %s (%u bytes)\n", fname, (unsigned)out_len);
+    kfree(dlbuf);
     return 0;
 }

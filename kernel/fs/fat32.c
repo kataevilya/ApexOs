@@ -641,6 +641,10 @@ int fat32_format(struct blockdev *dev) {
     /* Стандартная формула размера FAT (Microsoft fatgen103). */
     uint64_t tmp1 = total_sectors - reserved_sectors;
     uint64_t tmp2 = ((uint64_t)256 * sectors_per_cluster + num_fats) / 2;
+    if (tmp2 == 0) {
+        panic("fat32_format: computed FAT size divisor is zero (sectors_per_cluster=%u, num_fats=%u)",
+              (unsigned)sectors_per_cluster, (unsigned)num_fats);
+    }
     uint32_t fat_size = (uint32_t)((tmp1 + tmp2 - 1) / tmp2);
 
     uint32_t first_data_sector = reserved_sectors + num_fats * fat_size;
@@ -649,6 +653,9 @@ int fat32_format(struct blockdev *dev) {
         return -1;
     }
     uint32_t data_sectors = total_sectors - first_data_sector;
+    if (sectors_per_cluster == 0) {
+        panic("fat32_format: sectors_per_cluster is zero");
+    }
     uint32_t total_clusters = data_sectors / sectors_per_cluster;
     uint32_t root_cluster = 2;
 

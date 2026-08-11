@@ -136,4 +136,8 @@ int     net_tcp_is_connected(void);
 
 int     net_http_get(const char *host, const char *path, char *buf, size_t max_len, uint32_t *out_len);
 
+void    eth_send(const uint8_t *dst_mac, uint16_t ethertype, const void *payload, size_t len);
+void    arp_send_request(uint32_t target_ip);
+int     arp_resolve(uint32_t ip, uint8_t *out_mac);
+
 #endif /* APEXOS_NET_H */

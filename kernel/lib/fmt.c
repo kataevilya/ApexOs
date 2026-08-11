@@ -114,6 +114,11 @@ void vfmt(fmt_putc_fn putc, void *ctx, const char *fmt, va_list args) {
                                                 : va_arg(args, unsigned int), 16, 0);
                 emit_padded(putc, ctx, buf, len, width, zero_pad);
                 break;
+            case 'X':
+                len = render_uint(buf, is_long ? va_arg(args, unsigned long)
+                                                : va_arg(args, unsigned int), 16, 1);
+                emit_padded(putc, ctx, buf, len, width, zero_pad);
+                break;
             case 'p': {
                 void *v = va_arg(args, void *);
                 fmt_write(putc, ctx, "0x");

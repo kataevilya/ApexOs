@@ -1,6 +1,7 @@
 #include "net.h"
 #include "rtl8139.h"
 #include "serial.h"
+#include "console.h"
 #include "string.h"
 
 static uint16_t ip_id = 0;
@@ -83,11 +84,18 @@ void ip_send(uint8_t proto, uint32_t dst, const void *payload, uint16_t plen) {
     struct eth_hdr *eh = (struct eth_hdr *)frame;
     struct ip_hdr *ip = (struct ip_hdr *)(frame + ETH_HLEN);
 
-    if (dst == 0xFFFFFFFF || (dst & g_net.netmask) == (g_net.ip_addr & g_net.netmask)) {
-        dst = g_net.gateway;
+    uint8_t dst_mac[ETH_ALEN];
+    if (arp_resolve(dst, dst_mac) != 0) {
+        console_printf("[ip] arp failed for %u.%u.%u.%u, using broadcast\n",
+                       (dst >> 24) & 0xFF, (dst >> 16) & 0xFF,
+                       (dst >> 8) & 0xFF, dst & 0xFF);
+        serial_printf("[ip] arp failed for %u.%u.%u.%u, using broadcast\n",
+                      (dst >> 24) & 0xFF, (dst >> 16) & 0xFF,
+                      (dst >> 8) & 0xFF, dst & 0xFF);
+        for (int j = 0; j < ETH_ALEN; j++) dst_mac[j] = 0xFF;
     }
 
-    for (int i = 0; i < ETH_ALEN; i++) eh->dst[i] = 0xFF;
+    for (int i = 0; i < ETH_ALEN; i++) eh->dst[i] = dst_mac[i];
     for (int i = 0; i < ETH_ALEN; i++) eh->src[i] = g_net.mac[i];
     eh->type[0] = (ETH_TYPE_IP >> 8) & 0xFF;
     eh->type[1] = ETH_TYPE_IP & 0xFF;

@@ -2,6 +2,7 @@
 #include "context.h"
 #include "process.h"
 #include "kheap.h"
+#include "panic.h"
 #include "serial.h"
 #include "string.h"
 
@@ -79,6 +80,10 @@ void task_yield(void) {
        пока shell ждёт ввода), потеряло бы возможность туда вернуться:
        ничто больше не хранило бы точку "где именно был shell". */
     int total = g_ntasks + 1;
+    if (total <= 0) {
+        panic("task_yield: invalid total=%d (g_ntasks=%d) — refusing to modulo by zero",
+              total, g_ntasks);
+    }
     int cur_slot = (g_current < 0) ? g_ntasks : g_current;
     struct k_jmpbuf *prev_ctx = (cur_slot == g_ntasks) ? &g_main_ctx : &g_tasks[cur_slot].ctx;
 

@@ -2,6 +2,37 @@
 #include "serial.h"
 #include "console.h"
 #include "string.h"
+#include "pit.h"
+
+void eth_send(const uint8_t *dst_mac, uint16_t ethertype, const void *payload, size_t len);
+
+void arp_send_request(uint32_t target_ip) {
+    uint8_t pkt[sizeof(struct arp_hdr)];
+    memset(pkt, 0, sizeof(pkt));
+    struct arp_hdr *arp = (struct arp_hdr *)pkt;
+    arp->htype[0] = (ARP_HTYPE_ETH >> 8) & 0xFF;
+    arp->htype[1] = ARP_HTYPE_ETH & 0xFF;
+    arp->ptype[0] = (ARP_PTYPE_IP >> 8) & 0xFF;
+    arp->ptype[1] = ARP_PTYPE_IP & 0xFF;
+    arp->hlen = ETH_ALEN;
+    arp->plen = 4;
+    arp->oper[0] = (ARP_OP_REQUEST >> 8) & 0xFF;
+    arp->oper[1] = ARP_OP_REQUEST & 0xFF;
+    for (int i = 0; i < ETH_ALEN; i++) arp->sha[i] = g_net.mac[i];
+    for (int i = 0; i < ETH_ALEN; i++) arp->tha[i] = 0x00;
+    for (int i = 0; i < 4; i++) arp->spa[i] = (g_net.ip_addr >> (24 - i * 8)) & 0xFF;
+    for (int i = 0; i < 4; i++) arp->tpa[i] = (target_ip >> (24 - i * 8)) & 0xFF;
+
+    uint8_t broadcast_mac[ETH_ALEN];
+    for (int i = 0; i < ETH_ALEN; i++) broadcast_mac[i] = 0xFF;
+    eth_send(broadcast_mac, ETH_TYPE_ARP, pkt, sizeof(pkt));
+    console_printf("[arp] request %u.%u.%u.%u\n",
+                   (target_ip >> 24) & 0xFF, (target_ip >> 16) & 0xFF,
+                   (target_ip >> 8) & 0xFF, target_ip & 0xFF);
+    serial_printf("[arp] request %u.%u.%u.%u\n",
+                  (target_ip >> 24) & 0xFF, (target_ip >> 16) & 0xFF,
+                  (target_ip >> 8) & 0xFF, target_ip & 0xFF);
+}
 
 void arp_handle(const void *buf, size_t len) {
     if (len < sizeof(struct arp_hdr)) return;

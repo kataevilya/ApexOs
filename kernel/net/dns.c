@@ -3,12 +3,15 @@
 #include "serial.h"
 #include "console.h"
 #include "string.h"
+#include "pit.h"
 #include <stdint.h>
 
 #define DNS_PORT 53
 
 static dns_callback_t g_dns_cb = NULL;
 static uint16_t g_dns_tid = 0;
+static uint32_t g_dns_result = 0;
+static int g_dns_done = 0;
 
 void dns_set_callback(dns_callback_t cb) {
     g_dns_cb = cb;
@@ -41,10 +44,10 @@ static void dns_handle(uint16_t sport, const void *buf, size_t len) {
         g_dns_cb(0);
         return;
     }
-    answer += 6;
+    answer += 10;
     uint16_t rdlen = ((uint16_t)answer[0] << 8) | answer[1];
     answer += 2;
-    if (rdlen != 4) {
+    if (rdlen != 4 || answer + 4 > (const uint8_t *)buf + len) {
         console_write("[dns] bad rdlen\n");
         serial_write("[dns] bad rdlen\n");
         g_dns_cb(0);
@@ -61,12 +64,19 @@ static void dns_handle(uint16_t sport, const void *buf, size_t len) {
     g_dns_cb(ip);
 }
 
+static void dns_cb_wrapper(uint32_t ip) {
+    g_dns_result = ip;
+    g_dns_done = 1;
+}
+
 int net_dns_resolve(const char *hostname, uint32_t *out_ip) {
-    (void)out_ip;
     console_printf("[dns] resolving %s\n", hostname);
     serial_printf("[dns] resolving %s\n", hostname);
     g_dns_tid = (uint16_t)((uintptr_t)hostname & 0xFFFF);
     if (g_dns_tid == 0) g_dns_tid = 0x1234;
+
+    g_dns_result = 0;
+    g_dns_done = 0;
 
     uint8_t pkt[256];
     memset(pkt, 0, sizeof(pkt));
@@ -100,9 +110,22 @@ int net_dns_resolve(const char *hostname, uint32_t *out_ip) {
     pkt[pos++] = 0x00;
     pkt[pos++] = 0x00;
 
-    dns_set_callback(NULL);
+    dns_set_callback(dns_cb_wrapper);
     udp_set_callback(dns_handle, 53);
     udp_send(53, g_net.dns_server, pkt, pos);
 
-    return 0;
+    uint32_t deadline = pit_get_ticks() + 200;
+    while (!g_dns_done && pit_get_ticks() < deadline) {
+        net_tx_poll();
+        for (volatile int i = 0; i < 50000; i++) __asm__ volatile ("nop");
+    }
+
+    if (!g_dns_done) {
+        console_write("[dns] timeout\n");
+        serial_write("[dns] timeout\n");
+    }
+
+    if (out_ip) *out_ip = g_dns_result;
+
+    return g_dns_result != 0 ? 0 : -1;
 }
