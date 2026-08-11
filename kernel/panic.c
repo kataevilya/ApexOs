@@ -17,8 +17,8 @@ __attribute__((noreturn)) extern void halt_forever(void); /* kernel/arch/x86_64/
 void panic(const char *fmt, ...) {
     va_list args1, args2;
 
-    serial_write("\n[PANIC] ");
-    console_write_len_color("\n[PANIC] ", 9, fb_make_color(0xFF, 0x40, 0x40));
+    serial_write("\n[KERNEL PANIC] ");
+    console_write_len_color("\n[KERNEL PANIC] ", 9, fb_make_color(0xFF, 0x40, 0x40));
 
     va_start(args1, fmt);
     va_copy(args2, args1);
